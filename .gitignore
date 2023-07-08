@@ -1,0 +1,7 @@
+# Ignore IDE-specific files
+.vscode/
+.idea/
+
+# Ignore specific folders
+venv/
+__pycache__/

@@ -67,8 +67,6 @@ class AnotherWindow(QMainWindow):
         ...
     def copy(self):
         ...
-    def get_editor(self) -> QsciScintilla:
-        pass
 
     def set_up_body(self):
 

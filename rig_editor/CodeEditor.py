@@ -1,10 +1,9 @@
-from Qt.QtWidgets import QApplication, QMainWindow, QTextEdit, QPlainTextEdit, QVBoxLayout, QWidget
-from Qt.QtGui import QTextCursor, QColor, QTextFormat, QPainter, QFont, QFontMetrics
-from Qt.QtCore import QRect, QSize, Qt
+from PySide2.QtWidgets import QApplication, QMainWindow, QTextEdit, QPlainTextEdit, QVBoxLayout, QWidget
+from PySide2.QtGui import QTextCursor, QColor, QTextFormat, QPainter, QFont, QFontMetrics, QWheelEvent
+from PySide2.QtCore import QRect, QSize, Qt
+from SyntaxHighlighter import *
 
 # Rest of the code remains unchanged
-
-
 
 class CodeEditor(QPlainTextEdit):
     def __init__(self, parent=None):
@@ -15,10 +14,12 @@ class CodeEditor(QPlainTextEdit):
         self.updateRequest.connect(self.updateLineNumberArea)
         self.cursorPositionChanged.connect(self.highlightCurrentLine)
 
+        font = QFont("Consolas", 10)
+        font.setStyleHint(QFont.Monospace)
         # Set a monospaced font for the CodeEditor widget
-        font = QFont("Courier New")
+        font.setStyleStrategy(QFont.PreferAntialias)  # Enable anti-aliasing
         self.setFont(font)
-        
+
         # Calculate the width of four spaces in the current font
         metrics = QFontMetrics(font)
         space_width = metrics.width(" " * 4)
@@ -28,8 +29,38 @@ class CodeEditor(QPlainTextEdit):
 
         self.updateLineNumberAreaWidth(0)
         self.highlightCurrentLine()
-    
-        self.setTabStopDistance(self.fontMetrics().horizontalAdvance(' ') * 4)  # Set tab spacing to four spaces
+
+        # Set the line wrap mode to NoWrap
+        self.setLineWrapMode(QPlainTextEdit.NoWrap)
+
+        #self.setTabStopDistance(self.fontMetrics().horizontalAdvance(' ') * 4)  # Set tab spacing to four spaces
+
+        self.highlighter = PythonSyntaxHighlighter(self.document())  # Attach the syntax highlighter to the document
+        
+        # Initialize font size
+        self.base_font_size = 14
+
+    def wheelEvent(self, event):
+        # Check if Ctrl key is pressed
+        if event.modifiers() == Qt.ControlModifier:
+            # Get the wheel event delta
+            delta = event.angleDelta().y()
+            # Increase or decrease the font size based on the delta
+            if delta > 0:
+                self.base_font_size += 1
+            else:
+                self.base_font_size -= 1
+
+            # Limit font size to a reasonable range
+            self.base_font_size = max(4, min(30, self.base_font_size))
+
+            # Set the new font size
+            font = self.font()
+            font.setPointSize(self.base_font_size)
+            self.setFont(font)
+        else:
+            # Call the default wheelEvent for other cases
+            super(CodeEditor, self).wheelEvent(event)
 
 
     def keyPressEvent(self, event):
@@ -67,6 +98,9 @@ class CodeEditor(QPlainTextEdit):
         with open(file_path, 'r') as file:
             self.setPlainText(file.read())
 
+    def update_text(self, file_content):
+        self.setPlainText(file_content)
+
     def lineNumberAreaWidth(self):
         digits = 1
         max_value = max(1, self.blockCount())
@@ -98,7 +132,7 @@ class CodeEditor(QPlainTextEdit):
     
     def lineNumberAreaPaintEvent(self, event):
         painter = QPainter(self.lineNumberArea)
-        painter.fillRect(event.rect(), Qt.lightGray)
+        painter.fillRect(event.rect(), QColor(35, 35, 35))  # Set the background color to match your dark design
         block = self.firstVisibleBlock()
         block_number = block.blockNumber()
         top = int(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
@@ -108,7 +142,7 @@ class CodeEditor(QPlainTextEdit):
         while block.isValid() and top <= event.rect().bottom():
             if block.isVisible() and bottom >= event.rect().top():
                 number = str(block_number + 1)
-                painter.setPen(Qt.black)
+                painter.setPen(Qt.lightGray)
                 painter.drawText(0, top, self.lineNumberArea.width(), self.fontMetrics().height(),
                                     Qt.AlignRight, number)
 

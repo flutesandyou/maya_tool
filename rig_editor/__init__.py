@@ -1,12 +1,12 @@
 import sys
 import importlib
-from Qt.QtWidgets import QApplication, QMainWindow
-from Qt.QtGui import QPalette, QColor
-import main_window_ui
+from PySide2.QtWidgets import QApplication, QMainWindow
+from PySide2.QtGui import QPalette, QColor
+import MainWindow_ui
 from CodeEditor import *
-from fileTreeView import *
+from rig_editor.FileTreeView import *
 
-importlib.reload(main_window_ui)
+# importlib.reload(main_window_ui)
 
 class MyMainWindow(QMainWindow):
     def __init__(self):
@@ -19,6 +19,8 @@ class MyMainWindow(QMainWindow):
         self.file_tree_view = FileTreeView()
         self.file_tree_view.clicked.connect(self.file_tree_item_clicked)
 
+        self.file_tree_view.file_content_loaded.connect(self.load_file_into_editor)  # Connect to the correct signal
+
         # Create an instance of the custom CodeEditor
         self.code_editor = CodeEditor()
         
@@ -27,7 +29,7 @@ class MyMainWindow(QMainWindow):
         self.splitter.addWidget(self.file_tree_view)
         self.splitter.addWidget(self.code_editor)
         self.setCentralWidget(self.splitter)
-
+        
     def initUI(self):
         self.setWindowTitle('My shitty Tool')
         
@@ -40,7 +42,15 @@ class MyMainWindow(QMainWindow):
         window_height = int(screen_rect.height() * 0.7)  # 70% of screen height
         self.setGeometry(screen_rect.left(), screen_rect.top(), window_width, window_height)
 
+        # Calculate the center position for the window
+        screen_rect = QApplication.desktop().screenGeometry()
+        window_rect = self.frameGeometry()
+        center_position = screen_rect.center() - window_rect.center()
+        # Set window to center
+        self.move(center_position)
 
+    def load_file_into_editor(self, file_content):
+        self.code_editor.setPlainText(file_content)
 
     # Slot function to handle toolButton click
     def toolButtonClicked(self):

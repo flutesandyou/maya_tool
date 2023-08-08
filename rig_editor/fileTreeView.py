@@ -1,12 +1,18 @@
 import os
 from CodeEditor import CodeEditor
-from Qt import QtWidgets, QtCore
-from Qt.QtGui import QStandardItemModel, QStandardItem
-from Qt.QtWidgets import QInputDialog, QFileDialog
+from PySide2 import QtWidgets, QtCore
+from PySide2.QtGui import QStandardItemModel, QStandardItem
+from PySide2.QtWidgets import QInputDialog, QFileDialog
+from PySide2.QtCore import Signal, Qt
 
 class FileTreeView(QtWidgets.QTreeView):
+    # Define the signal here
+    file_content_loaded = Signal(str)
+
     def __init__(self, parent=None):
         super(FileTreeView, self).__init__(parent)
+
+        
         self.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
         self.setHeaderHidden(True)
 
@@ -37,6 +43,13 @@ class FileTreeView(QtWidgets.QTreeView):
         self.load_file_action.triggered.connect(self.load_file)
         self.delete_file_action.triggered.connect(self.delete_file)
 
+    def get_selected_file(self):
+        selected_index = self.currentIndex()
+        selected_item = self.model.itemFromIndex(selected_index)
+        if selected_item:
+            # Assuming you set the file path as the item's data
+            file_path = selected_item.data(QtCore.Qt.UserRole)
+            return file_path
 
     def show_context_menu(self, position):
         global_position = self.viewport().mapToGlobal(position)
@@ -64,11 +77,20 @@ class FileTreeView(QtWidgets.QTreeView):
                 self.add_file(file_path)
                 # Load the file in the CodeEditor
                 self.code_editor.load_file(file_path)
-    
-    def load_file(self, file_path):
-        with open(file_path, 'r') as file:
-            self.setPlainText(file.read())
+        
+    def load_file(self):
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getOpenFileName(self, "Load Python File", "", "Python Files (*.py);;All Files (*)", options=options)
+        if file_path:
+            with open(file_path, 'r') as file:
+                file_content = file.read()
+                self.file_content_loaded.emit(file_content)
 
+            # Add the filename to the FileTreeView
+            file_item = QStandardItem(file_path.split("/")[-1])  # Get only the filename without path
+            file_item.setData(file_path, Qt.UserRole)  # Set the file path as item data
+            self.root_item.appendRow(file_item)
+            
     def delete_file(self):
         file_path = self.get_selected_file()
         if file_path:

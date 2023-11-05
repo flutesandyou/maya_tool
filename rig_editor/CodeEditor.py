@@ -40,6 +40,15 @@ class CodeEditor(QPlainTextEdit):
         # Initialize font size
         self.base_font_size = 14
 
+        self.cached_text = ""
+
+    def set_plain_text(self, text):
+        self.cached_text = text
+        self.setPlainText(text)
+
+    def get_plain_text(self):
+        return self.toPlainText()
+
     def wheelEvent(self, event):
         # Check if Ctrl key is pressed
         if event.modifiers() == Qt.ControlModifier:

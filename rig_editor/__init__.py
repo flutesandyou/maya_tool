@@ -4,7 +4,8 @@ from PySide2.QtWidgets import QApplication, QMainWindow
 from PySide2.QtGui import QPalette, QColor
 import MainWindow_ui
 from CodeEditor import *
-from rig_editor.FileTreeView import *
+from FileTreeView import *
+from ExecutionWidget import *
 
 # importlib.reload(main_window_ui)
 
@@ -17,18 +18,25 @@ class MyMainWindow(QMainWindow):
         #self.ui = main_window_ui.Ui_MainWindow()
         #self.ui.setupUi(self)s
         self.file_tree_view = FileTreeView()
+        self.code_editor = CodeEditor()
+        self.execution_widget = ExecutionWidget(self.file_tree_view)
+
         self.file_tree_view.clicked.connect(self.file_tree_item_clicked)
 
         self.file_tree_view.file_content_loaded.connect(self.load_file_into_editor)  # Connect to the correct signal
 
         # Create an instance of the custom CodeEditor
-        self.code_editor = CodeEditor()
+
+        top_splitter = QtWidgets.QSplitter(Qt.Horizontal)
+        top_splitter.addWidget(self.file_tree_view)
+        top_splitter.addWidget(self.execution_widget)
+
+        main_splitter = QtWidgets.QSplitter(Qt.Vertical)
+        main_splitter.addWidget(top_splitter)
+        main_splitter.addWidget(self.code_editor)
+
+        self.setCentralWidget(main_splitter)
         
-        self.splitter = QtWidgets.QSplitter()
-        self.splitter.setOrientation(Qt.Vertical)
-        self.splitter.addWidget(self.file_tree_view)
-        self.splitter.addWidget(self.code_editor)
-        self.setCentralWidget(self.splitter)
         
     def initUI(self):
         self.setWindowTitle('My shitty Tool')
@@ -85,7 +93,12 @@ if not app:
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
 
-    set_dark_palette(app)
+
+    qss_path = os.path.join(os.path.dirname(__file__), 'qss/style.qss')
+    stylesheet = open(qss_path).read()
+    app.setStyleSheet(stylesheet)
+
+    # set_dark_palette(app)
 # Create an instance of the main window
 window = MyMainWindow()
 

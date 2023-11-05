@@ -33,15 +33,51 @@ class FileTreeView(QtWidgets.QTreeView):
         self.context_menu = QtWidgets.QMenu(self)
         self.new_file_action = QtWidgets.QAction("New File", self)
         self.load_file_action = QtWidgets.QAction("Load File", self)
-        self.delete_file_action = QtWidgets.QAction("Delete File", self)
+        self.delete_item_action = QtWidgets.QAction("Delete Item", self)
+        self.save_file_action = QtWidgets.QAction("Save File", self)
 
         self.context_menu.addAction(self.new_file_action)
         self.context_menu.addAction(self.load_file_action)
-        self.context_menu.addAction(self.delete_file_action)
+        self.context_menu.addAction(self.delete_item_action)
+        self.context_menu.addAction(self.save_file_action)
 
         self.new_file_action.triggered.connect(self.new_file)
         self.load_file_action.triggered.connect(self.load_file)
-        self.delete_file_action.triggered.connect(self.delete_file)
+        self.delete_item_action.triggered.connect(self.delete_item)
+        self.save_file_action.triggered.connect(self.save_file)
+
+    def save_file(self):
+        selected_item = self.get_selected_item()
+        if selected_item:
+            file_path = selected_item.data(QtCore.Qt.UserRole)
+            if file_path:
+                # Get the code from the CodeEditor
+                code = self.code_editor.get_plain_text()
+
+                # Update the cached content
+                self.cached_files_content[file_path] = code
+
+                # Save the code to the file
+                with open(file_path, 'w') as file:
+                    file.write(code)
+
+    def file_tree_item_selected(self, selected, deselected):
+        if selected.indexes():
+            selected_item = self.model.itemFromIndex(selected.indexes()[0])
+            file_path = selected_item.data(QtCore.Qt.UserRole)
+
+            # Save any changes from the previous file
+            previous_item = self.get_selected_item()
+            if previous_item:
+                previous_file_path = previous_item.data(QtCore.Qt.UserRole)
+                previous_code = self.code_editor.get_plain_text()
+                self.cached_files_content[previous_file_path] = previous_code
+
+            # Load and display the selected file content
+            if file_path in self.cached_files_content:
+                self.code_editor.set_plain_text(self.cached_files_content[file_path])
+            else:
+                self.code_editor.load_file(file_path)
 
     def get_selected_file(self):
         selected_index = self.currentIndex()
@@ -91,11 +127,22 @@ class FileTreeView(QtWidgets.QTreeView):
             file_item.setData(file_path, Qt.UserRole)  # Set the file path as item data
             self.root_item.appendRow(file_item)
             
-    def delete_file(self):
-        file_path = self.get_selected_file()
-        if file_path:
-            # Implement the logic to delete the file
-            print("Deleting file:", file_path)
+    def delete_item(self):
+        selected_item = self.get_selected_item()
+        if selected_item:
+            self.model.removeRow(selected_item.row())
+
+    def save_file(self):
+        selected_item = self.get_selected_item()
+        if selected_item:
+            file_path = selected_item.data(QtCore.Qt.UserRole)
+            if file_path:
+                # Get the code from the CodeEditor
+                code = self.code_editor.toPlainText()
+
+                # Save the code to the file
+                with open(file_path, 'w') as file:
+                    file.write(code)
 
     def add_file(self, file_path):
         file_name = QtCore.QFileInfo(file_path).fileName()

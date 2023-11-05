@@ -8,7 +8,8 @@ class PythonSyntaxHighlighter(QSyntaxHighlighter):
 
         # Define the syntax highlight rules
         self.highlight_rules = [
-            (QRegExp(r'\bTrue\b|\bFalse\b|\b(if|else|elif|while|for|in|def|class|return|import|from|as|not|and|or)\b'), 'keyword_format'),  # Keywords: True, False, and other Python keywords
+            (QRegExp(r'\bTrue\b|\bFalse\b|\b(if|else|elif|while|for|in|return|import|from|as|not|and|or)\b'), 'keyword_format'),  # Keywords: True, False, and other Python keywords
+            (QRegExp(r'\b(def|class)\b'), 'keyword_format2'),
             (QRegExp(r'\b(None|self)\b'), 'special_format'),  # Special objects: None and self
             (QRegExp(r'#[^\n]*'), 'comment_format'),  # Comments
             (QRegExp(r'".*?"'), 'double_quote_string_format'),  # Double-quoted strings
@@ -17,27 +18,33 @@ class PythonSyntaxHighlighter(QSyntaxHighlighter):
 
         self.formats = {
             'keyword_format': QTextCharFormat(),
+            'keyword_format2': QTextCharFormat(),
             'special_format': QTextCharFormat(),
             'comment_format': QTextCharFormat(),
             'double_quote_string_format': QTextCharFormat(),
             'single_quote_string_format': QTextCharFormat(),
             'method_def_format': QTextCharFormat(),
-            'method_call_format': QTextCharFormat(),
+            'class_name_format' : QTextCharFormat(),
         }
 
         # Set the format for various syntax elements (existing format settings)
 
         # Set the format for method definitions (e.g., def METHODNAME)
         method_def_format = self.formats['method_def_format']
-        method_def_format.setForeground(QColor(150, 150, 255))  # Light blue color for regular method definitions
+        method_def_format.setForeground(QColor(210, 180, 140))  # Light blue color for regular method definitions
 
-        # Set the format for method calls (e.g., obj.METHODNAME())
-        method_call_format = self.formats['method_call_format']
-        method_call_format.setForeground(QColor(30, 200, 0))   # Green color for method calls
+        keyword_format = self.formats['keyword_format']
+        keyword_format.setForeground(QColor(188, 137, 189)) 
+
+        keyword_format2 = self.formats['keyword_format2']
+        keyword_format2.setForeground(QColor(103, 154, 198)) 
 
         # Set the format for Python keywords (including "def" keyword)
-        keyword_format = self.formats['keyword_format']
-        keyword_format.setForeground(QColor(30, 80, 170))   # Red color for Python keywords
+        class_name_format = self.formats['class_name_format']
+        class_name_format.setForeground(QColor(113, 198, 177))  
+
+        comment_format = self.formats['comment_format']
+        comment_format.setForeground(QColor(116,152,93))
 
         # Define the rule patterns and formats
         self.highlight_rules_and_formats = [(QRegExp(pattern), format_name) for pattern, format_name in self.highlight_rules]
@@ -59,11 +66,10 @@ class PythonSyntaxHighlighter(QSyntaxHighlighter):
             self.setFormat(start, end - start, method_def_format)
 
             # Highlight the "def" keyword with the Python keyword format
-            self.setFormat(start, 3, self.formats['keyword_format'])  # The "def" keyword is 3 characters long
-
-        # Highlight method calls using the Python re module
-        method_call_format = self.formats['method_call_format']
-        method_call_pattern = r'(?<!\bdef\s)(\b\w+\b)\s*\('  # Pattern for finding method calls (method name followed by parentheses)
-        for match in re.finditer(method_call_pattern, text):
-            start, end = match.span(1)  # Get the span of the method name (group 1)
-            self.setFormat(start, end - start, method_call_format)
+            self.setFormat(start, 3, self.formats['keyword_format2'])  # The "def" keyword is 3 characters long
+            
+        class_name_format = self.formats['class_name_format']
+        class_name_pattern = r'\bclass\s+(\w+)\s*[:\(]'
+        for match in re.finditer(class_name_pattern, text):
+            start, end = match.span(1)  # Get the span of the class name (group 1)
+            self.setFormat(start, end - start, class_name_format)
